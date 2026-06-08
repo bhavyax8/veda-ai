@@ -1,33 +1,38 @@
 spring:
   application:
     name: veda-ai
-  
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/veda_ai
-    username: postgres
-    password: vedaai
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-  
+
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
+
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
     show-sql: false
-  
+
   ai:
+
     openai:
       api-key: ${GROQ_API_KEY}
-      base-url: https://api.groq.com/openai/v1
+      base-url: ${GROQ_API_URL}
+
       chat:
         options:
           model: llama-3.3-70b-versatile
           temperature: 0.1
           max-tokens: 1024
-    
+
     ollama:
-      base-url: http://localhost:11434
+      base-url: ${OLLAMA_API_URL}
+
       embedding:
         options:
           model: nomic-embed-text
@@ -38,9 +43,13 @@ spring:
 
 server:
   port: 8080
- 
 
 logging:
   level:
     root: INFO
     com.vedaai: DEBUG
+
+# noinspection SpringBootApplicationProperties
+veda:
+  embedding:
+    provider: ollama

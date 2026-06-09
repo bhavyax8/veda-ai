@@ -9,7 +9,7 @@ import com.vedaai.rag.service.ingestion.DocumentIngestionService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/rag")
 @RequiredArgsConstructor
 public class IngestionController {
 

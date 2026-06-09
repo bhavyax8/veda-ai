@@ -1,6 +1,5 @@
 package com.vedaai.rag.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,7 +16,7 @@ import java.util.UUID;
 public class DocumentChunk {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "doc_name")
@@ -26,14 +25,20 @@ public class DocumentChunk {
     @Column(name = "chunk_index")
     private Integer chunkIndex;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
     @Column(
-    name = "embedding",
-    columnDefinition = "vector(768)"
-)
-private float[] embedding;
+            name = "embedding",
+            columnDefinition = "vector(768)"
+    )
+    private float[] embedding;
+
+    @Column(name = "start_offset")
+    private Integer startOffset;
+
+    @Column(name = "end_offset")
+    private Integer endOffset;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

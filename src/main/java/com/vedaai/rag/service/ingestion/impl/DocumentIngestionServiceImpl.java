@@ -1,13 +1,6 @@
 package com.vedaai.rag.service.ingestion.impl;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-
+import com.vedaai.api.dto.ChunkData;
 import com.vedaai.rag.entity.DocumentChunk;
 import com.vedaai.rag.repository.DocumentChunkRepository;
 import com.vedaai.rag.service.chunking.ChunkingService;
@@ -17,53 +10,97 @@ import com.vedaai.rag.service.ingestion.DocumentIngestionService;
 import com.vedaai.rag.validation.FileValidationService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
-public class DocumentIngestionServiceImpl implements DocumentIngestionService {
+public class DocumentIngestionServiceImpl
+        implements DocumentIngestionService {
+
     private final TextExtractionService extractionService;
+
     private final ChunkingService chunkingService;
+
     private final EmbeddingService embeddingService;
+
     private final FileValidationService validator;
+
     private final DocumentChunkRepository documentChunkRepository;
 
-    // private final Repository repository;
     @Override
     public void ingestDocument(MultipartFile file) {
+
         validator.validate(file);
+
+        log.info("Starting ingestion for file: {}",
+                file.getOriginalFilename());
 
         String extractedText = extractionService.extractText(file);
 
-        List<String> chunks = chunkingService.chunkText(extractedText);
+        List<ChunkData> chunks = chunkingService.chunkText(extractedText);
+
         List<DocumentChunk> entities = new ArrayList<>();
 
-        for (int i = 0; i < chunks.size(); i++) {
+        for (ChunkData chunk : chunks) {
 
-            String chunk = chunks.get(i);
+            log.info("Generating embedding for chunk {}",
+                    chunk.getChunkIndex());
+            if (chunk.getContent() == null ||
+                    chunk.getContent().isBlank()) {
 
-            List<Float> embedding = embeddingService
-                    .generateEmbedding(chunk);
+                log.warn(
+                        "Skipping empty chunk {}",
+                        chunk.getChunkIndex());
 
-            float[] embeddingArray = new float[embedding.size()];
-
-            for (int j = 0; j < embedding.size(); j++) {
-
-                embeddingArray[j] = embedding.get(j);
+                continue;
             }
 
+            List<Float> embedding = embeddingService.generateEmbedding(
+                    chunk.getContent());
+
             DocumentChunk entity = DocumentChunk.builder()
-                    .docName(
-                            file.getOriginalFilename())
-                    .chunkIndex(i)
-                    .content(chunk)
-                    .embedding(embeddingArray)
-                    .createdAt(
-                            LocalDateTime.now())
+                    .docName(file.getOriginalFilename())
+                    .chunkIndex(chunk.getChunkIndex())
+                    .content(chunk.getContent())
+                    .embedding(
+                            toPrimitive(embedding))
+                    .startOffset(
+                            chunk.getStartOffset())
+                    .endOffset(
+                            chunk.getEndOffset())
+                    .createdAt(LocalDateTime.now())
                     .build();
 
             entities.add(entity);
         }
 
         documentChunkRepository.saveAll(entities);
+
+        log.info(
+                "Successfully stored {} chunks for file: {}",
+                entities.size(),
+                file.getOriginalFilename());
+    }
+
+    /**
+     * Convert List<Float> → float[]
+     */
+    private float[] toPrimitive(List<Float> list) {
+
+        float[] array = new float[list.size()];
+
+        for (int i = 0; i < list.size(); i++) {
+            array[i] = list.get(i);
+        }
+
+        return array;
     }
 }

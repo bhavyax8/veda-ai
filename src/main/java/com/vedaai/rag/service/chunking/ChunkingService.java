@@ -2,6 +2,8 @@ package com.vedaai.rag.service.chunking;
 
 import java.util.List;
 
+import com.vedaai.api.dto.ChunkData;
+
 public interface ChunkingService {
-    List<String> chunkText(String text);
+    List<ChunkData> chunkText(String text);
 }

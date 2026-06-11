@@ -47,4 +47,19 @@ public class RetrievalServiceImpl implements RetrievalService {
                                 .build();
         }
 
+        @Override
+        public List<SimilarChunkProjection> retrieveChunks(
+                        RetrievalRequest request) {
+
+                String query = request.getQuery();
+
+                List<Float> embedding = embeddingService.generateEmbedding(
+                                query);
+
+                String vectorString = embedding.toString();
+
+                return chunkRepository.searchSimilarChunks(
+                                vectorString,
+                                TOP_K);
+        }
 }
